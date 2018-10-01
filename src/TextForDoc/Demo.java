@@ -58,25 +58,33 @@ public class Demo {
         }
         int wang = personnum;
         for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
-        	getWifeInfo(i, p[i].description);
+        	getWifeInfo(i, p[i].description, wang);
         	//System.out.println(p[i].toString());
         }
-        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
-        	getChildrenInfo(i, wang, p[i].description);
-        	//System.out.println(p[i].toString());
-        }
+//        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
+//        	getChildrenInfo(i, wang, p[i].description);
+//        	//System.out.println(p[i].toString());
+//        }
         for(int i=0; i<personnum; i++) {
         	System.out.println(p[i].toString());
         }
 	}
-	public static void getWifeInfo(int ipartner, String wifeinfo) {
+	public static void getWifeInfo(int ipartner, String wifeinfo, int wang) {
 		//System.out.println();
 		//System.out.println(p[ipartner].name+":");
 		String pattern = "[续|又|再]{0,1}[娶|配].*?[女|氏]";
 		Pattern rPattern = Pattern.compile(pattern);
 		Matcher m = rPattern.matcher(wifeinfo);
+		int k =0;
+		int[] wifes = {0,0,0,0,0,0,0,0,0,0};
+		int[] wifesid = {0,0,0,0,0,0,0,0,0,0};
 		while(m.find()) {
 			//System.out.println(m.group(0));
+			wifes[k] = m.start();			
+			if(k>0) {	//获取上一个妻子的属性信息及对应子女信息(若只有一位妻子这部分不执行)
+				String wifeAndChildren = wifeinfo.substring(wifes[k-1], wifes[k]);
+				getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren);
+			}
 			p[personnum] = new People();
 			p[personnum].id = personnum+1;
 			p[personnum].gender = "女";
@@ -96,10 +104,24 @@ public class Demo {
 			}else {
 				p[ipartner].partnerid=String.valueOf(p[personnum].id);
 			}
+			wifesid[k] = p[personnum].id;
+			
 			personnum++;
+			k++;			
+		}	//while
+		//获取最后一位妻子或唯一的这位妻子及其儿女信息
+		if(k>1) {
+			String wifeAndChildren = wifeinfo.substring(wifes[k-1]);
+			getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren); 
+		}else  if(k==1){
+			String wifeAndChildren = wifeinfo.substring(wifes[k-1]);
+			getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren); 
+		}else {
+			//无妻子信息
+			getChildrenInfo(ipartner,-1, wang, wifeinfo);
 		}
 	}
-	public static void getChildrenInfo(int ifatherid,int wang, String childreninfo) {
+	public static void getChildrenInfo(int ifatherid,int imotherid, int wang, String childreninfo) {
 		//System.out.println();
 		//System.out.println(p[ifatherid].name+":");
 		String patterns = "子[一|二|三|四|五|六|七|八|九|十][^一|二|三|四|五|六|七|八|九|十]";
@@ -108,7 +130,7 @@ public class Demo {
 		while(ms.find()) {
 			int indexofson = ms.start();
 			String sonsinfo = childreninfo.substring(indexofson+2).trim();
-			getSon(ifatherid,wang, ms.group(0),sonsinfo);
+			getSon(ifatherid,imotherid,wang, ms.group(0),sonsinfo);
 		}
 		
 		String patternd = "女[一|二|三|四|五|六|七|八|九|十]";
@@ -117,11 +139,11 @@ public class Demo {
 		while(md.find()) {
 			int indexofdaughter = md.start();
 			String daughtersinfo = childreninfo.substring(indexofdaughter+2).trim();
-			getDaughter(ifatherid, md.group(0),daughtersinfo);
+			getDaughter(ifatherid, imotherid, md.group(0),daughtersinfo);
 		}
 		
 	}
-	public static void getSon(int ifatherid,int wang, String ms, String sonsinfo) {
+	public static void getSon(int ifatherid,int imotherid,int wang, String ms, String sonsinfo) {
 		int childrennum= getchildrenNum(ms);
 		//System.out.println("childrennum:"+childrennum);
 		String[] sons = sonsinfo.split(" ");
@@ -160,15 +182,7 @@ public class Demo {
     				p[personnum].generation=p[ifatherid].generation+1;
     				p[personnum].familyrank = j+1;
     				p[personnum].fatherid = p[ifatherid].id;
-    				if(p[ifatherid].partnerid!="") {
-    					int motherid = 0;
-        				if(p[ifatherid].partnerid.contains("/")) {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid.split("/")[0]);
-        				}else {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid);
-        				}
-        				p[personnum].motherid = motherid;
-    				}
+    				p[personnum].motherid = imotherid; 
     				p[personnum].description = description;
     				//System.out.println(p[personnum].toString());
     				personnum++;
@@ -178,7 +192,7 @@ public class Demo {
     		}	//for
 		}	//if		
 	}
-	public static void getDaughter(int ifatherid, String ms, String daughtersinfo) {
+	public static void getDaughter(int ifatherid,int imotherid, String ms, String daughtersinfo) {
 		int childrennum= getchildrenNum(ms);
 		//System.out.println("num:"+childrennum);
 		String[] daughters = daughtersinfo.split(" ");
@@ -193,16 +207,7 @@ public class Demo {
 					p[personnum].familyrank=j+1;
 					p[personnum].generation=p[ifatherid].generation+1;
 					p[personnum].fatherid = p[ifatherid].id;
-    				
-					if(p[ifatherid].partnerid!="") {
-    					int motherid = 0;
-        				if(p[ifatherid].partnerid.contains("/")) {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid.split("/")[0]);
-        				}else {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid);
-        				}
-        				p[personnum].motherid = motherid;
-    				}           				
+        			p[personnum].motherid = imotherid;       				
     				if(daughters[j].contains(rankNum[j]+"适")) {
     					p[personnum].description = daughters[j].substring(1);
     				}else {
@@ -229,17 +234,8 @@ public class Demo {
 					p[personnum].gender="女";
 					p[personnum].familyrank=j+1;
 					p[personnum].generation=p[ifatherid].generation+1;
-					p[personnum].fatherid = p[ifatherid].id;
-    				
-    				int motherid = 0;
-    				if(p[ifatherid].partnerid!="") {
-    					if(p[ifatherid].partnerid.contains("/")) {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid.split("/")[0]);
-        				}else {
-        					motherid=Integer.parseInt(p[ifatherid].partnerid);
-        				}
-        				p[personnum].motherid = motherid;
-    				}
+					p[personnum].fatherid = p[ifatherid].id;   				
+					p[personnum].motherid = imotherid; 
     				if(daughters[j].contains("(殀)")||daughters[j].contains("(夭)")) {
     					p[personnum].description = "夭";
     				}
