@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -65,14 +66,18 @@ public class Demo {
 //        	getChildrenInfo(i, wang, p[i].description);
 //        	//System.out.println(p[i].toString());
 //        }
-        for(int i=0; i<personnum; i++) {
-        	System.out.println(p[i].toString());
-        }
+      String path = "data/01卷一　　庙荣公121.xls";
+      List<People> list = new ArrayList<People>();
+      for(int i=0;i<personnum;i++) {
+      	list.add(p[i]);
+      	System.out.println(p[i].toString());
+      }
+      addExcel(path,list);
 	}
 	public static void getWifeInfo(int ipartner, String wifeinfo, int wang) {
 		//System.out.println();
 		//System.out.println(p[ipartner].name+":");
-		String pattern = "[续|又|再]{0,1}[娶|配].*?[女|氏]";
+		String pattern = "[续|又|再]{0,1}[娶|配|妣][^故|葬|合冢|生故未详|享寿].*?[女|氏|孺人]";
 		Pattern rPattern = Pattern.compile(pattern);
 		Matcher m = rPattern.matcher(wifeinfo);
 		int k =0;
@@ -83,7 +88,11 @@ public class Demo {
 			wifes[k] = m.start();			
 			if(k>0) {	//获取上一个妻子的属性信息及对应子女信息(若只有一位妻子这部分不执行)
 				String wifeAndChildren = wifeinfo.substring(wifes[k-1], wifes[k]);
-				getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren);
+				//System.out.println(wifeAndChildren);
+				getWifeBirthday(wifesid[k-1], wifeAndChildren);
+				getWifeDeathdate(wifesid[k-1], wifeAndChildren);
+				getwifeburied(wifesid[k-1], wifeAndChildren);
+				getChildrenInfo(ipartner,p[wifesid[k-1]].id, wang, wifeAndChildren);
 			}
 			p[personnum] = new People();
 			p[personnum].id = personnum+1;
@@ -104,20 +113,37 @@ public class Demo {
 			}else {
 				p[ipartner].partnerid=String.valueOf(p[personnum].id);
 			}
-			wifesid[k] = p[personnum].id;
+			wifesid[k] = personnum;
 			
 			personnum++;
 			k++;			
 		}	//while
 		//获取最后一位妻子或唯一的这位妻子及其儿女信息
-		if(k>1) {
-			String wifeAndChildren = wifeinfo.substring(wifes[k-1]);
-			getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren); 
-		}else  if(k==1){
-			String wifeAndChildren = wifeinfo.substring(wifes[k-1]);
-			getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren); 
-		}else {
+		if(k>0) {
+			System.out.println(wifes[k-1]+" "+p[ipartner].buriedindex);
+			if(wifes[k-1]<p[ipartner].buriedindex) {
+				String wifeAndChildren = wifeinfo.substring(wifes[k-1],p[ipartner].buriedindex);
+				System.out.println(wifeAndChildren);
+				getWifeBirthday(wifesid[k-1], wifeAndChildren);
+				getWifeDeathdate(wifesid[k-1], wifeAndChildren);
+				getwifeburied(wifesid[k-1], wifeAndChildren);
+				getChildrenInfo(ipartner,p[wifesid[k-1]].id, wang, wifeAndChildren); 
+			}else {
+				//这里有一个错误
+			}
+		}
+//		else  if(k==1){
+//			//System.out.println(wifes[k-1]+" "+p[ipartner].buriedindex);
+//			String wifeAndChildren = wifeinfo.substring(wifes[k-1],p[ipartner].buriedindex);			
+//			System.out.println(wifeAndChildren);
+//			getBirthday(wifesid[k-1], wifeAndChildren);
+//			getWifeDeathdate(wifesid[k-1], wifeAndChildren);
+//			getwifeburied(wifesid[k-1], wifeAndChildren);
+//			getChildrenInfo(ipartner,wifesid[k-1], wang, wifeAndChildren); 
+//		}
+		else {
 			//无妻子信息
+			//System.out.println("无妻子信息");
 			getChildrenInfo(ipartner,-1, wang, wifeinfo);
 		}
 	}
@@ -166,7 +192,8 @@ public class Demo {
     			boolean flag=false;
     			for(int k=0;k<wang;k++) {
     				if((p[k].name.equals(nameson)||p[k].name.equals(generationRank[p[ifatherid].generation]+nameson))
-    						&&p[k].fathername.equals(p[ifatherid].name)) {
+    						&&p[ifatherid].name.contains(p[k].fathername)) {
+    					p[k].motherid = imotherid;
     					flag=true;
     					break;
     				}
@@ -264,19 +291,39 @@ public class Demo {
 		return num;
 	}
 	public static void getBirthday(int i, String personinfo) {
-		String pattern = "\\S{1,5}年\\S{1,10}月\\S{1,10}生";
+		String pattern = "\\S{0,5}年\\S{1,10}月\\S{1,10}生";
 		Pattern r = Pattern.compile(pattern);
 		Matcher m = r.matcher(personinfo);
 		if(m.find()) {
 			String birthdayinfo=m.group(0).trim();
+			System.out.println(birthdayinfo);
 			p[i].ChineseBirthday = birthdayinfo.substring(0, birthdayinfo.length()-1);
-			//System.out.println(birthdayinfo);
+		}
+	}
+	public static void getWifeBirthday(int i, String wifeinfo) {
+		String pattern = "[同公年|\\S{0,5}年]\\S{1,10}月\\S{1,10}生";
+		Pattern r = Pattern.compile(pattern);
+		Matcher m = r.matcher(wifeinfo);
+		if(m.find()) {
+			String birthdayinfo=m.group(0).trim();
+			System.out.println(birthdayinfo);
+			p[i].ChineseBirthday = birthdayinfo.substring(0, birthdayinfo.length()-1);
 		}
 	}
 	public static void getDeathdate(int i, String personinfo) {
 		String pattern = "\\S{1,4}年\\S{1,10}月\\S{1,10}公故";
 		Pattern r = Pattern.compile(pattern);
 		Matcher m = r.matcher(personinfo);
+		if(m.find()) {
+			p[i].buriedindex=m.start();
+			String deathdateinfo=m.group(0).trim();
+			p[i].Chinesedeathdate = deathdateinfo.substring(0, deathdateinfo.length()-2);
+		}
+	} 
+	public static void getWifeDeathdate(int i, String wifeinfo) {
+		String pattern = "\\S{1,4}年\\S{1,15}妣故";
+		Pattern r = Pattern.compile(pattern);
+		Matcher m = r.matcher(wifeinfo);
 		if(m.find()) {
 			String deathdateinfo=m.group(0).trim();
 			p[i].Chinesedeathdate = deathdateinfo.substring(0, deathdateinfo.length()-2);
@@ -288,16 +335,37 @@ public class Demo {
 			Pattern r = Pattern.compile(pattern);
 			Matcher m = r.matcher(personinfo);
 			if(m.find()) {
+				if(p[i].buriedindex==0) {
+					p[i].buriedindex=m.start();
+				}
 				p[i].buried = m.group(0).substring(2).trim();
+			}else {
+				p[i].buriedindex=personinfo.length()-1;
 			}
 		}else {
-			String pattern = "公\\S{1,5}葬\\S{1,200} ";
+			String pattern = "公\\S{0,5}葬\\S{1,200} ";
 			Pattern r = Pattern.compile(pattern);
 			Matcher m = r.matcher(personinfo);
 			if(m.find()) {
+				if(p[i].buriedindex==0) {
+					p[i].buriedindex=m.start();
+				}
 				p[i].buried = m.group(0).trim();
+			}else {
+				p[i].buriedindex=personinfo.length()-1;
 			}
 		}
+	}
+	public static void getwifeburied(int i, String wifeinfo) {
+			String pattern = "公\\S{0,5}妣\\S{0,5}葬\\S{1,200} ";
+			Pattern r = Pattern.compile(pattern);
+			Matcher m = r.matcher(wifeinfo);
+			if(m.find()) {
+				if(p[i].buriedindex==0) {
+					p[i].buriedindex=m.start();
+				}
+				p[i].buried = m.group(0).trim();
+			}
 	}
 	public static void getCourtesyName(int i, String personinfo) {
 		String pattern = "字[\\u4E00-\\u9FA5][\\u4E00-\\u9FA5]";
@@ -326,7 +394,7 @@ public class Demo {
 	}
 	public static void getFatherid(int i) {
 		for(int j=i-1;j>=0;j--) {
-			if(p[j].name.equals(p[i].fathername)) {
+			if(p[j].name.contains(p[i].fathername)) {
 				//System.out.println(p[j].toString());
 				p[i].fatherid = p[j].id;		
 			}

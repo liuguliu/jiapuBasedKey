@@ -16,6 +16,7 @@ public class People {
 	int generation;
 	String family="Íô";
 	String description;
+	int buriedindex = 0;
 	String fathername="";
 	String daughterinfo="";
 	String soninfo="";
