@@ -2,8 +2,10 @@ package TextForDoc;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,64 +17,84 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 
 public class Demo {
-	static String generationRank[] = {"一","二","三","四","五","六","七","八","九","十","十一","十二","延","祚","昌","克","相","盛","时"};
+	static String generationRank[] = {"一","二","三","四","五","六","七","八","九","十","十一","十二","延","祚","昌","克","相","盛","时","二十",
+			"二十一","二十二","二十三","二十四","二十五","二十六","二十七","二十八","二十九","三十","三十一","三十二","三十三","三十四","三十五",
+			"三十六","三十七","三十八","三十九","四十"};
 	static String cNum[] = {"一","二","三","四","五","六","七","八","九","十"};
 	static String rankNum[] = {"","长","次","三","四","五","六","七","八","九","十"};
+//	static String column[] = {"01卷一　　庙荣公121","02卷二上　必达必遂1234必遇必逢房","02卷二下　必进公12","02卷二中　必进公2",
+//			"03卷三　　开泰12开景12","04卷四　　开顺光耀光旭","05卷五　　宗典宗绍宗易","06卷六　　宗虞宗烈公","07卷七上　必法公",
+//			"07卷七下　必旷公","08卷八上　必潢公仪公","08卷八下　必潢公仪公","09卷九上　必启必通必连","09卷九下  必映公支下","10卷十上　文辅宗侃支下",
+//			"10卷十下　文辅宗伦清公","10卷十中　文辅宗伦公","11卷十一上　文铺 德灿公","11卷十一下　文铺 宗复公","12卷十二上　文铺公345房","12卷十二下　文铺公六房",
+//			"13卷十三上　文成123各房","13卷十三下　文成4房文强文胜","14卷十四上　文斗文泰文显","14卷十四下　文惠文珍文略文正","15卷十五上　汉公源鲁士宏士毅124",
+//			"15卷十五下　士毅公五、六房","16卷十六　　士聪文文普文祥文先","17卷十七上　朝赠文礼文智文俊","17卷十七下　文彬益筹十二公","18卷十八上　绩公鸣冈鸣皋",
+//			"18卷十八下　文恭宽信敏惠行"};
 	static int Generation = -1;
 	static int personnum = 0;
-	static People p[] = new People[1500];
+	static People p[] = new People[5000];
 	
 	public static void main(String[] args) throws IOException {
-		
-		String text = "";
-		File file = new File("data/01卷一　　庙荣公121.doc.txt");
-		FileReader filereader = new FileReader(file);
-		BufferedReader bufferedreader = new BufferedReader(filereader);
-		String line="";
-		while((line=bufferedreader.readLine())!=null){
-            text+=line+"\r";
-        }
-		String[] lines = text.split("\r");
-        for(int i=0; i<lines.length; i++) {	//1 循环读取每一行的人物
-        	//System.out.println(lines[i]);
-        	if(getGeneration(lines[i])!=-1) {
-        		Generation = getGeneration(lines[i]);
-        		//System.out.println(Generation);
-        	}else {
-        		p[personnum] = new People();	//新建人物
-            	p[personnum].id = personnum+1; 
-            	p[personnum].generation = Generation;
-            	p[personnum].description = lines[i];
-            	getName(personnum, lines[i]);
-            	getFatherNameAndRank(personnum, lines[i]);
-            	getCourtesyName(personnum, lines[i]);
-            	getpesudonym(personnum, lines[i]);
-            	getBirthday(personnum, lines[i]);
-            	getDeathdate(personnum, lines[i]);
-            	getburied(personnum, lines[i]);
-            	//System.out.println(p[num].toStringTest());
-            	personnum++;
-        	}
-        }
-        for(int i=0; i<personnum; i++) {
-        	getFatherid(i);
-        }
-        int wang = personnum;
-        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
-        	getWifeInfo(i, p[i].description, wang);
-        	//System.out.println(p[i].toString());
-        }
-//        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
-//        	getChildrenInfo(i, wang, p[i].description);
-//        	//System.out.println(p[i].toString());
-//        }
-      String path = "data/01卷一　　庙荣公121.xls";
-      List<People> list = new ArrayList<People>();
-      for(int i=0;i<personnum;i++) {
-      	list.add(p[i]);
-      	System.out.println(p[i].toString());
-      }
-      addExcel(path,list);
+		File file = new File("data/FamilyBook");
+		String[] filelist = file.list();
+		for(int l=0; l<filelist.length;l++) {
+			personnum=0;
+			for(int i=0;i<5000;i++) {
+				p[i]=null;
+			}
+			String text = "";
+//			File file = new File("data/FamilyBook/01卷一　　庙荣公121.doc.txt");
+//			FileReader filereader = new FileReader(file);
+//			BufferedReader bufferedreader = new BufferedReader(filereader);
+			String[] saveFilename = filelist[l].split("\\.");
+			BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(new FileInputStream("data/FamilyBook/"+saveFilename[0]+".doc.txt"),"UTF-8"));
+			String line="";
+			while((line=bufferedreader.readLine())!=null){
+	            text+=line+"\r";
+	        }
+			String[] lines = text.split("\r");
+	        for(int i=0; i<lines.length; i++) {	//1 循环读取每一行的人物
+	        	//System.out.println(lines[i]);
+	        	if(getGeneration(lines[i])!=-1) {
+	        		Generation = getGeneration(lines[i]);
+	        		//System.out.println(Generation);
+	        	}else if(lines[i].length()<5){
+	        		continue;
+	        	}else {
+	        		p[personnum] = new People();	//新建人物
+	            	p[personnum].id = personnum+1; 
+	            	p[personnum].generation = Generation;
+	            	p[personnum].description = lines[i];
+	            	getName(personnum, lines[i]);
+	            	getFatherNameAndRank(personnum, lines[i]);
+	            	getCourtesyName(personnum, lines[i]);
+	            	getpesudonym(personnum, lines[i]);
+	            	getBirthday(personnum, lines[i]);
+	            	getDeathdate(personnum, lines[i]);
+	            	getburied(personnum, lines[i]);
+	            	System.out.println(p[personnum].toStringTest());
+	            	personnum++;
+	        	}
+	        }
+	        for(int i=0; i<personnum; i++) {
+	        	getFatherid(i);
+	        }
+	        int wang = personnum;
+	        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
+	        	getWifeInfo(i, p[i].description, wang);
+	        	//System.out.println(p[i].toString());
+	        }
+//	        for(int i=0; i<wang; i++) {	//循环提取人物配偶信息及子女信息
+//	        	getChildrenInfo(i, wang, p[i].description);
+//	        	//System.out.println(p[i].toString());
+//	        }
+	      String path = "data/Formatting/"+saveFilename[0]+".xls";
+	      List<People> list = new ArrayList<People>();
+	      for(int i=0;i<personnum;i++) {
+	      	list.add(p[i]);
+	      	System.out.println(p[i].toString());
+	      }
+	      addExcel(path,list);
+		}
 	}
 	public static void getWifeInfo(int ipartner, String wifeinfo, int wang) {
 		//System.out.println();
@@ -222,55 +244,79 @@ public class Demo {
 	public static void getDaughter(int ifatherid,int imotherid, String ms, String daughtersinfo) {
 		int childrennum= getchildrenNum(ms);
 		//System.out.println("num:"+childrennum);
-		String[] daughters = daughtersinfo.split(" ");
-		if(childrennum<daughters.length) {
+		if(!daughtersinfo.contains(" ")) {
 			for(int j=0;j<childrennum;j++) {
-			//System.out.print(daughters[j]+" ");
-				if(daughters[j].contains(rankNum[j]+"适")||daughters[j].charAt(0)=='适') {
-					p[personnum]=new People();
-					p[personnum].id=personnum+1;
-					p[personnum].name="女"+cNum[j];
-					p[personnum].gender="女";
-					p[personnum].familyrank=j+1;
-					p[personnum].generation=p[ifatherid].generation+1;
-					p[personnum].fatherid = p[ifatherid].id;
-        			p[personnum].motherid = imotherid;       				
-    				if(daughters[j].contains(rankNum[j]+"适")) {
-    					p[personnum].description = daughters[j].substring(1);
-    				}else {
-    					p[personnum].description = daughters[j];
-    				}
-    				p[personnum].partnerid = String.valueOf(personnum+2);
-    				//System.out.println(p[num].toString());
-    				personnum++;
-    				//嫁
-    				p[personnum]=new People();
-					p[personnum].id=personnum+1;
-					if(daughters[j].contains(rankNum[j]+"适")) {
-						//System.out.println(daughters[j]);
-						p[personnum].name=daughters[j].substring(2);
-    				}else {
-    					p[personnum].name=daughters[j].substring(1);
-    				}
-					p[personnum].partnerid = String.valueOf(personnum);
-					personnum++;
-				}else  {
-					p[personnum]=new People();
-					p[personnum].id=personnum+1;
-					p[personnum].name="女"+cNum[j];
-					p[personnum].gender="女";
-					p[personnum].familyrank=j+1;
-					p[personnum].generation=p[ifatherid].generation+1;
-					p[personnum].fatherid = p[ifatherid].id;   				
-					p[personnum].motherid = imotherid; 
-    				if(daughters[j].contains("(殀)")||daughters[j].contains("(夭)")) {
-    					p[personnum].description = "夭";
-    				}
-    				//System.out.println(p[num].toString());
-    				personnum++;
+				p[personnum] = new People();
+				p[personnum].id = personnum+1;
+				p[personnum].name = "女"+cNum[j];
+				p[personnum].gender="女";
+				p[personnum].familyrank=j+1;
+				p[personnum].generation=p[ifatherid].generation+1;
+				p[personnum].fatherid = p[ifatherid].id;
+				p[personnum].motherid = imotherid;
+				if(daughtersinfo.contains(")")){
+					p[personnum].description = "夭";
 				}
+				//System.out.println(p[num].toString());
+				personnum++;
 			}
-		}		
+		}else {
+			String[] daughters = daughtersinfo.split(" ");
+			if(childrennum<daughters.length) {
+				for(int j=0;j<childrennum;j++) {
+					System.out.print(daughters[j]+" ");
+					
+					if(daughters[j].contains(rankNum[j]+"适")||daughters[j].charAt(0)=='适') {
+						p[personnum]=new People();
+						p[personnum].id=personnum+1;
+						p[personnum].name="女"+cNum[j];
+						p[personnum].gender="女";
+						p[personnum].familyrank=j+1;
+						p[personnum].generation=p[ifatherid].generation+1;
+						p[personnum].fatherid = p[ifatherid].id;
+	        			p[personnum].motherid = imotherid;       				
+	    				if(daughters[j].contains(rankNum[j]+"适")) {
+	    					p[personnum].description = daughters[j].substring(1);
+	    				}else {
+	    					p[personnum].description = daughters[j];
+	    				}
+	    				p[personnum].partnerid = String.valueOf(personnum+2);
+	    				//System.out.println(p[num].toString());
+	    				personnum++;
+	    				//嫁
+	    				if(daughters[j].length()>1) {
+	    					p[personnum]=new People();
+	    					p[personnum].id=personnum+1;
+	    					if(daughters[j].contains(rankNum[j]+"适")) {
+	    						//System.out.println(daughters[j]);
+	    						p[personnum].name=daughters[j].substring(2);
+	        				}else {
+	        					p[personnum].name=daughters[j].substring(1);
+	        				}
+	    					p[personnum].partnerid = String.valueOf(personnum);
+	    					personnum++;
+	    				}else {
+	    					//独一适字，无其他信息
+	    				}
+	    				
+					}else  {
+						p[personnum]=new People();
+						p[personnum].id=personnum+1;
+						p[personnum].name="女"+cNum[j];
+						p[personnum].gender="女";
+						p[personnum].familyrank=j+1;
+						p[personnum].generation=p[ifatherid].generation+1;
+						p[personnum].fatherid = p[ifatherid].id;   				
+						p[personnum].motherid = imotherid; 
+	    				if(daughters[j].contains("(殀)")||daughters[j].contains("(夭)")) {
+	    					p[personnum].description = "夭";
+	    				}
+	    				//System.out.println(p[num].toString());
+	    				personnum++;
+					}
+				}
+			}		
+		}
 	}
 	public static int getchildrenNum(String ms) {
 		int num=0;
@@ -296,7 +342,7 @@ public class Demo {
 		Matcher m = r.matcher(personinfo);
 		if(m.find()) {
 			String birthdayinfo=m.group(0).trim();
-			System.out.println(birthdayinfo);
+			//System.out.println(birthdayinfo);
 			p[i].ChineseBirthday = birthdayinfo.substring(0, birthdayinfo.length()-1);
 		}
 	}
@@ -306,7 +352,7 @@ public class Demo {
 		Matcher m = r.matcher(wifeinfo);
 		if(m.find()) {
 			String birthdayinfo=m.group(0).trim();
-			System.out.println(birthdayinfo);
+			//System.out.println(birthdayinfo);
 			p[i].ChineseBirthday = birthdayinfo.substring(0, birthdayinfo.length()-1);
 		}
 	}
@@ -340,7 +386,7 @@ public class Demo {
 				}
 				p[i].buried = m.group(0).substring(2).trim();
 			}else {
-				p[i].buriedindex=personinfo.length()-1;
+				p[i].buriedindex=personinfo.length();
 			}
 		}else {
 			String pattern = "公\\S{0,5}葬\\S{1,200} ";
@@ -352,7 +398,7 @@ public class Demo {
 				}
 				p[i].buried = m.group(0).trim();
 			}else {
-				p[i].buriedindex=personinfo.length()-1;
+				p[i].buriedindex=personinfo.length();
 			}
 		}
 	}
@@ -402,7 +448,7 @@ public class Demo {
 	}
 	public static int getGeneration(String line) {
 		int num = -1;
-		String pattern = "第.世";
+		String pattern = "[第]?[一|二|廿|三|四|五|六|七|八|九|十]{1,3}世";
 		Pattern r = Pattern.compile(pattern);
 		Matcher m = r.matcher(line);
 		if(m.find()) {
@@ -418,35 +464,74 @@ public class Demo {
 				case "第九世":num=9;break;
 				case "第十世":num=10;break;
 				case "第十一世":num=11;break;
+				case "十一世":num=11;break;
 				case "第十二世":num=12;break;
+				case "十二世":num=12;break;
 				case "第十三世":num=13;break;
+				case "十三世":num=13;break;
 				case "第十四世":num=14;break;
+				case "十四世":num=14;break;
 				case "第十五世":num=15;break;
+				case "十五世":num=15;break;
 				case "第十六世":num=16;break;
+				case "十六世":num=16;break;
 				case "第十七世":num=17;break;
+				case "十七世":num=17;break;
 				case "第十八世":num=18;break;
+				case "十八世":num=18;break;
 				case "第十九世":num=19;break;	
+				case "十九世":num=19;break;	
 				case "第二十世":num=20;break;
+				case "二十世":num=20;break;
 				case "第二十一世":num=21;break;
+				case "二十一世":num=21;break;
+				case "廿二世":num=21;break;
 				case "第二十二世":num=22;break;
+				case "二十二世":num=22;break;
+				case "廿一世":num=21;break;
 				case "第二十三世":num=23;break;
+				case "二十三世":num=23;break;
+				case "廿三世":num=23;break;
 				case "第二十四世":num=24;break;
+				case "二十四世":num=24;break;
+				case "廿四世":num=24;break;
 				case "第二十五世":num=25;break;
+				case "二十五世":num=25;break;
+				case "廿五世":num=25;break;
 				case "第二十六世":num=26;break;
+				case "二十六世":num=26;break;
+				case "廿六世":num=26;break;
 				case "第二十七世":num=27;break;
+				case "二十七世":num=27;break;
+				case "廿七世":num=27;break;
 				case "第二十八世":num=28;break;
+				case "二十八世":num=28;break;
+				case "廿八世":num=28;break;
 				case "第二十九世":num=29;break;				
+				case "二十九世":num=29;break;				
+				case "廿九世":num=29;break;				
 				case "第三十世":num=30;break;
+				case "三十世":num=30;break;
 				case "第三十一世":num=31;break;
+				case "三十一世":num=31;break;
 				case "第三十二世":num=32;break;
+				case "三十二世":num=32;break;
 				case "第三十三世":num=33;break;
+				case "三十三世":num=33;break;
 				case "第三十四世":num=34;break;
+				case "三十四世":num=34;break;
 				case "第三十五世":num=35;break;
+				case "三十五世":num=35;break;
 				case "第三十六世":num=36;break;
+				case "三十六世":num=36;break;
 				case "第三十七世":num=37;break;
+				case "三十七世":num=37;break;
 				case "第三十八世":num=38;break;
+				case "三十八世":num=38;break;
 				case "第三十九世":num=39;break;
+				case "三十九世":num=39;break;
 				case "第四十世":num=40;break;
+				case "四十世":num=40;break;
 				default:num=-1;break;
 			}
 		}		
@@ -459,15 +544,23 @@ public class Demo {
 	public static void getFatherNameAndRank(int i, String personinfo) {
 		int indexStart = personinfo.indexOf(' ');
 		int indexEnd = personinfo.indexOf("子 ");
-		String fatherAndRank = personinfo.substring(indexStart, indexEnd+1);		
-		int indexofRank = getFamilyRank(i, fatherAndRank);
-		//System.out.println(indexofRank);
-		p[i].fathername = fatherAndRank.substring(1,indexofRank);
-
+		if(indexStart<indexEnd) {
+			String fatherAndRank = personinfo.substring(indexStart, indexEnd+1);		
+			int indexofRank = getFamilyRank(i, fatherAndRank);
+			//System.out.println(indexofRank);
+			p[i].fathername = fatherAndRank.substring(1,indexofRank);
+		}
+		else {
+			//为始祖或格式错误
+		}
 	}
 	public static int getFamilyRank(int i, String fartherAndRank) {
 		int indexofRank = -1;
-		if(fartherAndRank.contains("公长子")) {
+		if(fartherAndRank.contains("嗣子")) {
+			p[i].familyrank=1;
+			indexofRank = fartherAndRank.indexOf("嗣子");
+		}
+		else if(fartherAndRank.contains("公长子")) {
 			p[i].familyrank=1;
 			indexofRank = fartherAndRank.indexOf("公长子");
 		}
