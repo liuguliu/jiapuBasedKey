@@ -10,7 +10,7 @@ import jxl.read.biff.BiffException;
 public class CountAllPerson {
 	static int num = 0;
 	public static void main(String[] args){
-		File file = new File("data/Formatting");
+		File file = new File("data/Formatting1");
 		String[] filelist = file.list();
 		for(int i=0;i<filelist.length;i++) {
 			Workbook workbook;
